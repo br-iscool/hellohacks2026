@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { EventInfo } from "@/lib/data/events";
-import { eventCategory, eventPrice, fetchEvents } from "@/lib/api";
+import { eventCategory, eventClubName, eventPrice, fetchEvents } from "@/lib/api";
 import { CategoryTag } from "./discover/CategoryTag";
 import { EventCard } from "./discover/EventCard";
 import { SearchBox } from "./discover/SearchBox";
@@ -32,8 +32,11 @@ export default function DiscoverPage() {
 								startHour: start?.getHours() ?? 0,
 								startMinute: start?.getMinutes() ?? 0,
 								hasStartTime: event.has_start_time,
+								endHour: event.ends_at ? new Date(event.ends_at).getHours() : undefined,
+								endMinute: event.ends_at ? new Date(event.ends_at).getMinutes() : undefined,
+								hasEndTime: Boolean(event.ends_at && event.has_start_time),
 				title: event.name,
-				club: event.club?.name ?? event.organization ?? "UBC Club",
+				club: eventClubName(event),
 				category: eventCategory(event),
 				tags: [...new Set(event.tags.map((tag) => tag.trim()).filter(Boolean))],
 				date: start ? start.toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "Date TBA",
@@ -93,6 +96,9 @@ export default function DiscoverPage() {
 			startHour: event.startHour ?? 0,
 			startMinute: event.startMinute ?? 0,
 			hasStartTime: event.hasStartTime,
+			endHour: event.endHour,
+			endMinute: event.endMinute,
+			hasEndTime: event.hasEndTime,
 			title: event.title,
 			club: event.club,
 			tags: event.tags,
@@ -129,23 +135,20 @@ export default function DiscoverPage() {
 								<div className="explore-row">
 									<span>Explore:</span>
 									{topTags.map(renderTagButton)}
-									{remainingTags.length > 0 && (
-										<button
-											className="explore-more-button"
-											aria-expanded={showAllTags}
-											aria-controls="more-explore-tags"
-											onClick={() => setShowAllTags(!showAllTags)}
+											{remainingTags.length > 0 && (
+												<button
+													className="explore-more-button"
+													aria-expanded={showAllTags}
+													onClick={() => setShowAllTags(!showAllTags)}
 										>
 											{showAllTags ? "Show less" : `More tags (${remainingTags.length})`}
-										</button>
-									)}
-								</div>
-								{showAllTags && remainingTags.length > 0 && (
-									<div className="explore-more-tags" id="more-explore-tags">
+												</button>
+											)}
+									</div>
+									<div className={`explore-more-tags ${showAllTags ? "explore-more-tags-open" : ""}`} aria-hidden={!showAllTags}>
 										{remainingTags.map(renderTagButton)}
 									</div>
-								)}
-							</div>
+								</div>
 						</div>
 						<aside className="today-card" aria-label="Today on campus">
 							<div className="today-heading">

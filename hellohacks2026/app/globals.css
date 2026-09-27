@@ -445,10 +445,18 @@ a {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
-	padding: 12px;
-	border: 1px solid #e4e9ed;
-	border-radius: 14px;
-	background: #fff;
+	max-height: 0;
+	padding: -10px 0 0 45px;
+	overflow: hidden;
+	opacity: 0;
+	transform: translateY(-6px);
+	transition: max-height 220ms ease, padding-bottom 220ms ease, opacity 180ms ease, transform 220ms ease;
+}
+.explore-more-tags-open {
+	max-height: 500px;
+	padding-bottom: 12px;
+	opacity: 1;
+	transform: translateY(0);
 }
 .category-tag-count {
 	margin-left: 5px;
@@ -991,6 +999,14 @@ a {
 }
 .calendar-event-block span {
 	line-height: 1.25;
+}
+.calendar-event-block .calendar-event-club {
+	font-size: 7px;
+	line-height: 1.2;
+	opacity: .78;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 .event-mint {
 	background: #dcedc8;
@@ -1753,9 +1769,9 @@ a {
 	right: auto;
 	top: auto;
 	width: 100%;
-	height: 40px;
-	min-height: 40px;
-	max-height: 40px;
+	height: 60px;
+	min-height: 60px;
+	max-height: 60px;
 	border: 0;
 	border-radius: 5px;
 	padding: 6px;
@@ -1928,6 +1944,7 @@ a {
 	padding: 24px;
 	display: grid;
 	place-items: center;
+	animation: modal-backdrop-in 180ms ease-out both;
 }
 
 .event-modal {
@@ -1938,6 +1955,40 @@ a {
 	background: #fff;
 	border-radius: 16px;
 	box-shadow: 0 24px 90px #00152b55;
+	transform-origin: center;
+	animation: event-modal-in 300ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.modal-backdrop-closing {
+	animation: modal-backdrop-out 180ms ease-in both;
+}
+.modal-backdrop-closing .event-modal {
+	animation: event-modal-out 180ms ease-in both;
+}
+
+@keyframes modal-backdrop-in {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes event-modal-in {
+	from { opacity: 0; transform: scale(.88); }
+	to { opacity: 1; transform: scale(1); }
+}
+@keyframes modal-backdrop-out {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+@keyframes event-modal-out {
+	from { opacity: 1; transform: scale(1); }
+	to { opacity: 0; transform: scale(.94); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.modal-backdrop,
+	.event-modal {
+		animation: none;
+	}
 }
 
 .modal-close {

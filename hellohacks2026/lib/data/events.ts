@@ -4,6 +4,9 @@ export type EventInfo = {
 	startHour?: number;
 	startMinute?: number;
 	hasStartTime?: boolean;
+	endHour?: number;
+	endMinute?: number;
+	hasEndTime?: boolean;
 	title: string;
 	club: string;
 	category: string;

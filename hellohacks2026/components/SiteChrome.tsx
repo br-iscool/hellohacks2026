@@ -14,8 +14,8 @@ export function SiteHeader({ active }: SiteHeaderProps) {
 	];
 
 	return (
-			<header className="site-header">
-			<Link className="brand" href="/" aria-label="Findr home">
+		<header id="top" className="site-header">
+			<Link className="brand" href="/#top" aria-label="Findr home">
 				<span className="brand-mark"><Image src="/assets/logo.png" alt="" width={36} height={36} /></span>
 			</Link>
 			<nav className="main-nav" aria-label="Main navigation">

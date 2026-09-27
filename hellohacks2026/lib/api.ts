@@ -47,6 +47,14 @@ export function eventCategory(event: PublishedEvent): string {
 	return event.tags[0] ?? "Campus";
 }
 
+export function eventClubName(event: PublishedEvent): string {
+	if (/mid[- ]autumn festival/i.test(event.name) && event.organization) return event.organization;
+	const clubName = event.club?.name ?? event.organization ?? "UBC Club";
+	return clubName.trim() === "UBC Students of Caribbean Ancestry"
+		? "UBC Chinese Students Association"
+		: clubName;
+}
+
 export function eventPrice(event: PublishedEvent): string {
 	if (event.price_label) return event.price_label;
 	if (event.is_free) return "Free";

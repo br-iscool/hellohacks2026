@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "@/lib/api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { eventClubName, eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "@/lib/api";
 import { averageTagColor } from "@/lib/tagColors";
 import { CategoryTag } from "./discover/CategoryTag";
 import { SiteHeader } from "./SiteChrome";
@@ -12,6 +12,8 @@ export type CalendarEvent = {
 	date: string;
 	startHour: number;
 	startMinute: number;
+	endHour?: number;
+	endMinute?: number;
 	title: string;
 	club: string;
 	tags: string[];
@@ -23,6 +25,7 @@ export type CalendarEvent = {
 	image: number;
 	imageUrl: string | null;
 	hasStartTime?: boolean;
+	hasEndTime?: boolean;
 };
 
 const today = toDateKey(new Date());
@@ -40,6 +43,14 @@ function formatTime(hour: number, minute: number) {
 	const suffix = hour >= 12 ? "PM" : "AM";
 	const displayHour = hour % 12 || 12;
 	return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
+
+function eventTime(event: CalendarEvent) {
+	if (event.hasStartTime === false) return "Check details for time";
+	const start = formatTime(event.startHour, event.startMinute);
+	return event.hasEndTime && event.endHour !== undefined && event.endMinute !== undefined
+		? `${start}–${formatTime(event.endHour, event.endMinute)}`
+		: start;
 }
 
 function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric", year: "numeric" }) {
@@ -97,6 +108,12 @@ function SidebarTagScroller({ tags }: { tags: string[] }) {
 export function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
 	const [details, setDetails] = useState<EventDetails | null>(null);
 	const [detailsError, setDetailsError] = useState<string | null>(null);
+	const [isClosing, setIsClosing] = useState(false);
+	const closeDialog = useCallback(() => {
+		if (isClosing) return;
+		setIsClosing(true);
+		window.setTimeout(onClose, 180);
+	}, [isClosing, onClose]);
 	useEffect(() => {
 		let active = true;
 		fetchEventDetails(event.id)
@@ -106,18 +123,18 @@ export function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; o
 	}, [event.id]);
 	useEffect(() => {
 		const onKeyDown = (keyboardEvent: KeyboardEvent) => {
-			if (keyboardEvent.key === "Escape") onClose();
+			if (keyboardEvent.key === "Escape") closeDialog();
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [onClose]);
+	}, [closeDialog]);
 	const missingDetails = "Check additional post details";
-	const time = event.hasStartTime === false ? missingDetails : formatTime(event.startHour, event.startMinute);
+	const time = eventTime(event);
 
 	return (
-		<div className="modal-backdrop" onClick={onClose}>
+		<div className={`modal-backdrop ${isClosing ? "modal-backdrop-closing" : ""}`} onClick={closeDialog}>
 			<section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-modal-title" onClick={(eventClick) => eventClick.stopPropagation()}>
-				<button className="modal-close" aria-label="Close event details" onClick={onClose}>×</button>
+				<button className="modal-close" aria-label="Close event details" onClick={closeDialog}>×</button>
 				<div className="modal-image" style={event.imageUrl ? { backgroundImage: `url(${JSON.stringify(event.imageUrl)})` } : undefined}>
 					{!event.imageUrl && <Image src={`/event-photos/event-${event.image}.jpg`} alt={`Students at ${event.title}`} width={900} height={400}/>}
 				</div>
@@ -184,8 +201,10 @@ export default function CalendarPage() {
 						date: toDateKey(date),
 						startHour: date.getHours(),
 						startMinute: date.getMinutes(),
+						endHour: event.ends_at ? new Date(event.ends_at).getHours() : undefined,
+						endMinute: event.ends_at ? new Date(event.ends_at).getMinutes() : undefined,
 						title: event.name,
-						club: event.club?.name ?? event.organization ?? "UBC Club",
+						club: eventClubName(event),
 						tags,
 						color: averageTagColor(tags),
 						place: event.location ?? "Location TBA",
@@ -195,6 +214,7 @@ export default function CalendarPage() {
 						image: (index % 6) + 1,
 						imageUrl: event.image_url,
 						hasStartTime: event.has_start_time,
+						hasEndTime: Boolean(event.ends_at && event.has_start_time),
 					}];
 				});
 				setEvents(mapped);
@@ -341,8 +361,8 @@ export default function CalendarPage() {
 												</div>
 												<div className="calendar-date-events">
 													{displayedEvents.map((event) => (
-														<span key={event.id} className="calendar-event-block" style={{ backgroundColor: event.color }} title={`${formatTime(event.startHour, event.startMinute)} - ${event.title}`}>
-															<strong>{formatTime(event.startHour, event.startMinute)}</strong>
+																<span key={event.id} className="calendar-event-block" style={{ backgroundColor: event.color }} title={`${eventTime(event)} - ${event.title}`}>
+																	<strong>{eventTime(event)}</strong>
 															<span>{event.title}</span>
 														</span>
 													))}
@@ -357,10 +377,11 @@ export default function CalendarPage() {
 												</button>
 												<div className="calendar-date-events" aria-label={`${dayEvents.length} events`}>
 													{displayedEvents.map((event) => (
-														<button key={event.id} className="calendar-event-block" style={{ backgroundColor: event.color }} onClick={() => selectEvent(event)} title={`${formatTime(event.startHour, event.startMinute)} - ${event.title}`}>
-															<strong>{formatTime(event.startHour, event.startMinute)}</strong>
-															<span>{event.title}</span>
-														</button>
+																	<button key={event.id} className="calendar-event-block" style={{ backgroundColor: event.color }} onClick={() => selectEvent(event)} title={`${eventTime(event)} - ${event.title}`}>
+																		<strong>{eventTime(event)}</strong>
+																	<span>{event.title}</span>
+																	<small className="calendar-event-club">{event.club}</small>
+																</button>
 													))}
 													{remainingEventCount > 0 && (
 														<button className="calendar-more-events" onClick={() => selectDate(date)}>
@@ -395,7 +416,7 @@ export default function CalendarPage() {
 										>
 											<div className="day-event-item-meta">
 												<span className="day-event-dot" style={{ backgroundColor: event.color }} aria-hidden="true" />
-												<time>{formatTime(event.startHour, event.startMinute)}</time>
+																<time>{eventTime(event)}</time>
 												<span>{event.price}</span>
 											</div>
 											{event.tags.length > 0 && <SidebarTagScroller tags={event.tags} />}
