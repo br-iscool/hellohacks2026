@@ -157,7 +157,7 @@ Routes marked 🔒 require `Authorization: Bearer <CRON_SECRET>`.
 | POST 🔒 | `/api/accounts/scrape-all` | Scrape due accounts (cron) |
 | POST 🔒 | `/api/posts/:id/process?force=1` | Run one post through Gemini (debugging) |
 | POST 🔒 | `/api/posts/process-pending?limit=10` | Process a batch of pending posts (cron) |
-| GET | `/api/events?start=&end=&organization=&tag=&limit=` | Published events. `start` defaults to 6 hours ago; `from` is accepted as an alias |
+| GET | `/api/events?start=&end=&organization=&tag=` | Published events. `start` defaults to 6 hours ago; `from` is accepted as an alias |
 | GET | `/api/events/:id` | One event plus every source post that advertised it |
 | GET | `/api/v1/clubs` | Club directory from the Supabase `clubs` table |
 

@@ -30,8 +30,8 @@ export function EventCard({ event, compact = false }: EventCardProps) {
 			<div className="event-card-body">
 				<div className="event-card-meta">
 					<div className="tag-list">
-						<CategoryTag name={event.category} />
-						{event.price === "Free" && <CategoryTag name="Free" />}
+						{(event.tags.length > 0 ? event.tags : [event.category]).map((tag) => <CategoryTag key={tag} name={tag} />)}
+						{event.price === "Free" && !event.tags.some((tag) => tag.toLowerCase() === "free") && <CategoryTag name="Free" />}
 					</div>
 					<time>{event.date.toUpperCase()}</time>
 				</div>

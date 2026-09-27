@@ -78,8 +78,9 @@ export type ListPublishedEventsParams = {
   end?: string;
   organization?: string;
   tag?: string;
-  limit?: number;
 };
+
+const EVENT_PAGE_SIZE = 1000;
 
 const EVENT_LIST_COLUMNS =
   "id,name,organization,description,starts_at,ends_at,has_start_time,timezone,location,registration_url," +
@@ -88,16 +89,7 @@ const EVENT_LIST_COLUMNS =
 
 export async function listPublishedEvents(params: ListPublishedEventsParams) {
   const db = createAdminClient();
-  let query = db
-    .from("events")
-    .select(EVENT_LIST_COLUMNS)
-    .eq("status", "published")
-    .order("starts_at", { ascending: true });
-
-  if (params.start) query = query.gte("starts_at", params.start);
-  if (params.end) query = query.lte("starts_at", params.end);
-  if (params.tag) query = query.contains("tags", [params.tag]);
-  if (params.limit) query = query.limit(params.limit);
+  let organizationFilter: string | undefined;
 
   if (params.organization) {
     // Sanitize: these characters have syntactic meaning in a PostgREST `or=` filter.
@@ -107,24 +99,53 @@ export async function listPublishedEvents(params: ListPublishedEventsParams) {
     const clubIds = (matchingClubs ?? []).map((c) => c.id as string);
     const orParts = [`organization.ilike.%${term}%`];
     if (clubIds.length > 0) orParts.push(`club_id.in.(${clubIds.join(",")})`);
-    query = query.or(orParts.join(","));
+    organizationFilter = orParts.join(",");
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
+  const buildQuery = () => {
+    let query = db
+      .from("events")
+      .select(EVENT_LIST_COLUMNS)
+      .eq("status", "published")
+      .order("starts_at", { ascending: true });
+
+    if (params.start) query = query.gte("starts_at", params.start);
+    if (params.end) query = query.lte("starts_at", params.end);
+    if (params.tag) query = query.contains("tags", [params.tag]);
+    if (organizationFilter) query = query.or(organizationFilter);
+    return query;
+  };
+
+  const events = [];
+  for (let offset = 0; ; ) {
+    const { data, error } = await buildQuery().range(offset, offset + EVENT_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    if (page.length === 0) break;
+    events.push(...page);
+    offset += page.length;
+  }
+  return events;
 }
 
 /** Public JSON feed with the event columns used by the frontend. */
 export async function listPublishedEventData() {
   const db = createAdminClient();
-  const { data, error } = await db
+  const buildQuery = () => db
     .from("events")
     .select("name,price_label,starts_at,ends_at,location,description,tags,free_food,popularity_score,source_url,organization,image_url")
     .eq("status", "published")
     .gte("starts_at", new Date().toISOString())
-    .order("starts_at", { ascending: true })
-    .limit(100);
-  if (error) throw error;
-  return data ?? [];
+    .order("starts_at", { ascending: true });
+
+  const events = [];
+  for (let offset = 0; ; ) {
+    const { data, error } = await buildQuery().range(offset, offset + EVENT_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    if (page.length === 0) break;
+    events.push(...page);
+    offset += page.length;
+  }
+  return events;
 }

@@ -8,7 +8,6 @@ const querySchema = z.object({
   end: z.string().datetime({ offset: true }).optional(),
   organization: z.string().min(1).optional(),
   tag: z.string().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
@@ -22,7 +21,6 @@ export async function GET(request: NextRequest) {
       end: params.get("end") ?? undefined,
       organization: params.get("organization") ?? undefined,
       tag: params.get("tag") ?? undefined,
-      limit: params.get("limit") ?? undefined,
     });
     if (!parsed.success) return jsonError(400, "Invalid query parameters");
 
@@ -32,7 +30,6 @@ export async function GET(request: NextRequest) {
       end: parsed.data.end,
       organization: parsed.data.organization,
       tag: parsed.data.tag,
-      limit: parsed.data.limit,
     });
     return Response.json({ events });
   });

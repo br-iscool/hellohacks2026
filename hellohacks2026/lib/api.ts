@@ -24,7 +24,7 @@ export type EventDetails = PublishedEvent & {
 };
 
 export async function fetchEvents(start: Date, end: Date): Promise<PublishedEvent[]> {
-	const query = new URLSearchParams({ start: start.toISOString(), end: end.toISOString(), limit: "100" });
+	const query = new URLSearchParams({ start: start.toISOString(), end: end.toISOString() });
 	const response = await fetch(`/api/events?${query}`, { cache: "no-store" });
 	if (!response.ok) {
 		const payload = await response.json().catch(() => null) as { error?: string } | null;

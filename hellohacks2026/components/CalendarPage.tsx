@@ -111,11 +111,17 @@ export default function CalendarPage() {
 	const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 	const [dialogEventId, setDialogEventId] = useState<string | null>(null);
 	useEffect(() => {
-		const start = new Date();
-		const end = new Date(start);
-		end.setFullYear(end.getFullYear() + 1);
-		fetchEvents(start, end)
-			.then((rows) => {
+		const now = new Date();
+		const start = new Date(now);
+		start.setFullYear(now.getFullYear() - 1);
+		const todayStart = new Date(now);
+		todayStart.setHours(0, 0, 0, 0);
+		const end = new Date(now);
+		end.setFullYear(now.getFullYear() + 1);
+		Promise.all([fetchEvents(start, todayStart), fetchEvents(todayStart, end)])
+			.then(([pastRows, upcomingRows]) => {
+				const rows = [...new Map([...pastRows, ...upcomingRows].map((event) => [event.id, event])).values()]
+					.sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? ""));
 				const mapped = rows.flatMap((event, index) => {
 					if (!event.starts_at) return [];
 					const date = new Date(event.starts_at);
@@ -172,7 +178,12 @@ export default function CalendarPage() {
 	const monthTitle = `${monthNames[selected.getMonth()]} ${selected.getFullYear()}`;
 	const periodStart = view === "Week" ? weekStart : monthStart;
 	const todayDate = new Date(`${today}T12:00:00`);
-	const canGoBack = periodStart > (view === "Week" ? startOfWeek(todayDate) : new Date(todayDate.getFullYear(), todayDate.getMonth(), 1, 12));
+	const earliestDate = new Date(todayDate);
+	earliestDate.setFullYear(earliestDate.getFullYear() - 1);
+	const earliestPeriod = view === "Week"
+		? startOfWeek(earliestDate)
+		: new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1, 12);
+	const canGoBack = periodStart > earliestPeriod;
 	const weekEnd = new Date(weekStart);
 	weekEnd.setDate(weekEnd.getDate() + 6);
 	const weekLabel = `${monthNames[weekStart.getMonth()].slice(0, 3)} ${weekStart.getDate()} – ${monthNames[weekEnd.getMonth()].slice(0, 3)} ${weekEnd.getDate()}, ${weekEnd.getFullYear()}`;
@@ -214,7 +225,7 @@ export default function CalendarPage() {
 			<main className="calendar-page">
 				<div className="calendar-heading-row">
 					<div>
-						<p className="micro-eyebrow coral-text">{view === "Week" ? "UPCOMING EVENTS" : "PLAN AHEAD"}</p>
+						<p className="micro-eyebrow coral-text">{view === "Week" ? "EVENT CALENDAR" : "PLAN AHEAD"}</p>
 						<h1>{view === "Week" ? "This week" : monthTitle}</h1>
 					</div>
 					<div className="calendar-controls">

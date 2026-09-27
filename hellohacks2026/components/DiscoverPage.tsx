@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { categories, type EventInfo } from "@/lib/data/events";
+import type { EventInfo } from "@/lib/data/events";
 import { eventCategory, eventPrice, fetchEvents } from "@/lib/api";
 import { CategoryTag } from "./discover/CategoryTag";
 import { EventCard } from "./discover/EventCard";
@@ -15,6 +15,8 @@ export default function DiscoverPage() {
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 	const [category, setCategory] = useState("All");
+	const [selectedTag, setSelectedTag] = useState<string | null>(null);
+	const [showAllTags, setShowAllTags] = useState(false);
 	useEffect(() => {
 		const now = new Date();
 		const end = new Date(now);
@@ -25,6 +27,7 @@ export default function DiscoverPage() {
 				title: event.name,
 				club: event.club?.name ?? event.organization ?? "UBC Club",
 				category: eventCategory(event),
+				tags: [...new Set(event.tags.map((tag) => tag.trim()).filter(Boolean))],
 				date: start ? start.toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "Date TBA",
 				time: start && event.has_start_time ? start.toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit" }) : "Time TBA",
 				place: event.location ?? "Location TBA",
@@ -35,6 +38,30 @@ export default function DiscoverPage() {
 			};
 		}))).catch((error: unknown) => setLoadError(error instanceof Error ? error.message : "Could not load events")).finally(() => setLoading(false));
 	}, []);
+	const popularTags = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const event of events) {
+			for (const tag of new Set(event.tags.map((value) => value.toLocaleLowerCase()))) {
+				counts.set(tag, (counts.get(tag) ?? 0) + 1);
+			}
+		}
+		return [...counts.entries()]
+			.sort(([tagA, countA], [tagB, countB]) => countB - countA || tagA.localeCompare(tagB))
+			.map(([tag, count]) => ({ tag, count }));
+	}, [events]);
+	const topTags = popularTags.slice(0, 5);
+	const remainingTags = popularTags.slice(5);
+	const renderTagButton = ({ tag, count }: { tag: string; count: number }) => (
+		<button
+			key={tag}
+			className={`category-chip ${selectedTag === tag ? "chip-selected" : ""}`}
+			aria-pressed={selectedTag === tag}
+			aria-label={`${tag}, ${count} ${count === 1 ? "event" : "events"}`}
+			onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+		>
+			<CategoryTag name={tag} count={count} />
+		</button>
+	);
 	const filteredEvents = useMemo(
 		() => events.filter((event) => {
 			const searchableText = `${event.title} ${event.club} ${event.place}`.toLowerCase();
@@ -42,10 +69,11 @@ export default function DiscoverPage() {
 			const matchesCategory = category === "All"
 				|| event.category === category
 				|| (category === "Free" && event.price === "Free");
+			const matchesTag = selectedTag === null || event.tags.some((tag) => tag.toLocaleLowerCase() === selectedTag);
 
-			return matchesSearch && matchesCategory;
+			return matchesSearch && matchesCategory && matchesTag;
 		}),
-		[events, search, category],
+		[events, search, category, selectedTag],
 	);
 	const featuredEvents = filteredEvents.slice(0, 2);
 	const upcomingEvents = filteredEvents.slice(2);
@@ -53,6 +81,7 @@ export default function DiscoverPage() {
 	const todayEvents = events.filter((event) => event.date === todayLabel);
 	const resetFilters = () => {
 		setCategory("All");
+		setSelectedTag(null);
 		setSearch("");
 	};
 	const scrollToEvents = () => document.getElementById("events")?.scrollIntoView({ behavior: "smooth" });
@@ -108,18 +137,26 @@ export default function DiscoverPage() {
 							<button className="filter-button" onClick={resetFilters}>Any time</button>
 						</div>
 					</div>
-					<div className="explore-row">
-						<span>Explore:</span>
-						{categories.map((item) => (
-							<button
-								key={item}
-								className={`category-chip ${category === item ? "chip-selected" : ""}`}
-								aria-pressed={category === item}
-								onClick={() => setCategory(category === item ? "All" : item)}
-							>
-								<CategoryTag name={item} />
-							</button>
-						))}
+					<div className="explore-tag-section">
+						<div className="explore-row">
+							<span>Explore:</span>
+							{topTags.map(renderTagButton)}
+							{remainingTags.length > 0 && (
+								<button
+									className="explore-more-button"
+									aria-expanded={showAllTags}
+									aria-controls="more-explore-tags"
+									onClick={() => setShowAllTags(!showAllTags)}
+								>
+									{showAllTags ? "Show less" : `More tags (${remainingTags.length})`}
+								</button>
+							)}
+						</div>
+						{showAllTags && remainingTags.length > 0 && (
+							<div className="explore-more-tags" id="more-explore-tags">
+								{remainingTags.map(renderTagButton)}
+							</div>
+						)}
 					</div>
 
 					<div className="section-title-row editor-title-row">

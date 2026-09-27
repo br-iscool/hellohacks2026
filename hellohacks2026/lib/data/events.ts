@@ -2,6 +2,7 @@ export type EventInfo = {
 	title: string;
 	club: string;
 	category: string;
+	tags: string[];
 	date: string;
 	time: string;
 	place: string;
@@ -16,6 +17,7 @@ export const discoverEvents: EventInfo[] = [
 		title: "Stars, Stories & the Salish Sky",
 		club: "UBC Astronomy Club",
 		category: "Science",
+		tags: ["science", "stargazing"],
 		date: "Sep 29, 2026",
 		time: "7:30–9:30 PM",
 		place: "Hennings 201",
@@ -27,6 +29,7 @@ export const discoverEvents: EventInfo[] = [
 		title: "Late Night at the Gallery",
 		club: "UBC Visual Arts Collective",
 		category: "Arts",
+		tags: ["arts", "gallery", "music"],
 		date: "Oct 1, 2026",
 		time: "6:00–10:00 PM",
 		place: "Morris and Helen Belkin Art Gallery",
@@ -38,6 +41,7 @@ export const discoverEvents: EventInfo[] = [
 		title: "Climate Tech Founders Forum",
 		club: "UBC Future Founders",
 		category: "Career",
+		tags: ["career", "climate tech", "startups"],
 		date: "Oct 2, 2026",
 		time: "5:30–7:00 PM",
 		place: "Sauder, Henry Angus 098",
@@ -49,6 +53,7 @@ export const discoverEvents: EventInfo[] = [
 		title: "Thunderbird Sunset Run",
 		club: "UBC Run Club",
 		category: "Sports",
+		tags: ["sports", "running", "social"],
 		date: "Oct 3, 2026",
 		time: "5:00–6:30 PM",
 		place: "Meet at The Nest",
@@ -60,6 +65,7 @@ export const discoverEvents: EventInfo[] = [
 		title: "Dumpling Social & Mahjong",
 		club: "UBC Chinese Students Association",
 		category: "Social",
+		tags: ["social", "food", "games"],
 		date: "Oct 4, 2026",
 		time: "6:30–9:00 PM",
 		place: "AMS Nest 2306/09",
@@ -71,6 +77,7 @@ export const discoverEvents: EventInfo[] = [
 		title: "Marine Biodiversity BioBlitz",
 		club: "UBC Biology Students Society",
 		category: "Science",
+		tags: ["science", "biology", "nature"],
 		date: "Oct 5, 2026",
 		time: "9:00 AM–12:00 PM",
 		place: "Beaty Biodiversity Museum",
@@ -79,5 +86,3 @@ export const discoverEvents: EventInfo[] = [
 		image: 6,
 	},
 ];
-
-export const categories = ["Science", "Social", "Arts", "Career", "Sports", "Free"];
