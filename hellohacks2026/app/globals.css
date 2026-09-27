@@ -49,7 +49,7 @@ a {
 .site-header {
 	height: 58px;
 	padding: 0 max(4.45vw, 24px);
-	background: var(--navy);
+	background: #032e65;
 	color: white;
 	display: flex;
 	align-items: center;
@@ -67,7 +67,7 @@ a {
 .brand-mark {
 	height: 36px;
 	width: 36px;
-	background: #fff;
+	background: transparent;
 	color: var(--navy);
 	border-radius: 6px;
 	display: grid;
@@ -76,6 +76,12 @@ a {
 	font-weight: 700;
 	font-size: 16px;
 	letter-spacing: -1.2px;
+}
+.brand-mark img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	border-radius: inherit;
 }
 .brand-name {
 	font-size: 13px;
@@ -622,6 +628,13 @@ a {
 	margin: 0 0 4px;
 	color: var(--navy);
 }
+.event-card-date {
+	display: block;
+	margin-bottom: 4px;
+	color: #0055b8;
+	font-size: 9px;
+	font-weight: 700;
+}
 .club-link {
 	font-size: 11px;
 	font-weight: 700;
@@ -689,8 +702,27 @@ a {
 	font-size: 17px;
 	line-height: 1.14;
 }
+.event-card-compact .event-card-date {
+	font-size: 8px;
+}
 .event-card-compact .event-card-meta {
 	font-size: 8px;
+}
+.event-card-compact .tag-list {
+	width: 100%;
+	min-width: 0;
+	flex: 1 1 0;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: none;
+	padding-bottom: 2px;
+}
+.event-card-compact .tag-list::-webkit-scrollbar {
+	display: none;
+}
+.event-card-compact .tag-list .category-tag {
+	flex: 0 0 auto;
 }
 .event-card-compact .category-tag {
 	font-size: 9px;
@@ -1968,6 +2000,9 @@ a {
 	font: 700 18px var(--serif);
 	margin: 0 0 8px;
 }
+.modal-content h3:not(:first-of-type) {
+	margin-top: 28px;
+}
 
 .modal-content > p:not(.micro-eyebrow):not(.club-link) {
 	color: #627487;
@@ -2093,7 +2128,7 @@ a {
 	min-height: 82px;
 	padding: 15px 22px;
 	display: grid;
-	grid-template-columns: 44px minmax(0, 1fr) auto;
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 18px;
 	border-bottom: 1px solid #edf0f2;
@@ -2106,14 +2141,6 @@ a {
 
 .club-index-item:hover {
 	background: #f8fafc;
-}
-
-.club-index-number {
-	color: #91a0ad;
-	font-size: 12px;
-	font-variant-numeric: tabular-nums;
-	font-weight: 700;
-	letter-spacing: .08em;
 }
 
 .club-index-details {
@@ -2417,14 +2444,8 @@ a {
 	.club-index-item {
 		min-height: 0;
 		padding: 15px 14px;
-		grid-template-columns: 30px minmax(0, 1fr);
-		gap: 9px 12px;
-	}
-
-	.club-index-number {
-		grid-row: 1 / span 2;
-		align-self: start;
-		padding-top: 3px;
+		grid-template-columns: 1fr;
+		gap: 9px;
 	}
 
 	.club-index-details h3 {
@@ -2432,7 +2453,7 @@ a {
 	}
 
 	.club-index-link {
-		grid-column: 2;
+		grid-column: 1;
 		justify-self: start;
 		padding: 8px 10px;
 	}

@@ -22,6 +22,7 @@ export type CalendarEvent = {
 	details: string;
 	image: number;
 	imageUrl: string | null;
+	hasStartTime?: boolean;
 };
 
 const today = toDateKey(new Date());
@@ -110,6 +111,8 @@ export function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; o
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [onClose]);
+	const missingDetails = "Check additional post details";
+	const time = event.hasStartTime === false ? missingDetails : formatTime(event.startHour, event.startMinute);
 
 	return (
 		<div className="modal-backdrop" onClick={onClose}>
@@ -127,9 +130,13 @@ export function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; o
 					<p className="micro-eyebrow coral-text">{formatDate(event.date)}</p>
 					<h2 id="event-modal-title">{event.title}</h2>
 					<p className="club-link">{event.club}</p>
-					<div className="modal-facts"><span>{formatTime(event.startHour, event.startMinute)}</span><span>{event.place}</span><span>{event.price}</span></div>
+					<div className="modal-facts">
+						<span><strong>Time:</strong> {time}</span>
+						<span><strong>Location:</strong> {event.place || missingDetails}</span>
+						<span><strong>Price:</strong> {event.price || missingDetails}</span>
+					</div>
 					<h3>About this event</h3>
-					<p>{event.description}</p>
+					<p>{event.description || missingDetails}</p>
 					{details?.registration_url && <p><a href={details.registration_url} target="_blank" rel="noreferrer">Register for this event ↗</a></p>}
 					<h3>Event source</h3>
 					{details ? (
@@ -187,6 +194,7 @@ export default function CalendarPage() {
 						details: event.description,
 						image: (index % 6) + 1,
 						imageUrl: event.image_url,
+						hasStartTime: event.has_start_time,
 					}];
 				});
 				setEvents(mapped);

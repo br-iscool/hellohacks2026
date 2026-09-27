@@ -31,6 +31,7 @@ export default function DiscoverPage() {
 								calendarDate: start ? start.toISOString().slice(0, 10) : undefined,
 								startHour: start?.getHours() ?? 0,
 								startMinute: start?.getMinutes() ?? 0,
+								hasStartTime: event.has_start_time,
 				title: event.name,
 				club: event.club?.name ?? event.organization ?? "UBC Club",
 				category: eventCategory(event),
@@ -91,6 +92,7 @@ export default function DiscoverPage() {
 			date: event.calendarDate,
 			startHour: event.startHour ?? 0,
 			startMinute: event.startMinute ?? 0,
+			hasStartTime: event.hasStartTime,
 			title: event.title,
 			club: event.club,
 			tags: event.tags,
@@ -113,7 +115,7 @@ export default function DiscoverPage() {
 					<div className="hero-inner">
 						<div className="hero-copy">
 							<p className="eyebrow"><span className="eyebrow-dot" /> UPCOMING UBC EVENTS</p>
-							<h1>What’s happening at UBC?</h1>
+							<h1>What's cooking in UBC?</h1>
 							<p className="hero-description">
 								A clearer way to find the talks, workshops, socials, games, and moments that you wouldn&apos;t find out about otherwise.
 							</p>

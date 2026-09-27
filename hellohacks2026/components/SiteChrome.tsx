@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 type SiteHeaderProps = {
 	active: "Discover" | "Calendar" | "Clubs" | "FAQ";
@@ -13,10 +14,9 @@ export function SiteHeader({ active }: SiteHeaderProps) {
 	];
 
 	return (
-		<header className="site-header">
+			<header className="site-header">
 			<Link className="brand" href="/" aria-label="Findr home">
-				<span className="brand-mark">F</span>
-				<span className="brand-name">Findr</span>
+				<span className="brand-mark"><Image src="/assets/logo.png" alt="" width={36} height={36} /></span>
 			</Link>
 			<nav className="main-nav" aria-label="Main navigation">
 				{links.map((link) => (

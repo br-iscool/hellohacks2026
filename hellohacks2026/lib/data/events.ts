@@ -3,6 +3,7 @@ export type EventInfo = {
 	calendarDate?: string;
 	startHour?: number;
 	startMinute?: number;
+	hasStartTime?: boolean;
 	title: string;
 	club: string;
 	category: string;

@@ -74,8 +74,8 @@ export default function ClubsPage() {
 					{loading && <div className="empty-state" role="status">Loading clubs…</div>}
 					{loadError && <div className="empty-state" role="alert">{loadError}</div>}
 					{!loading && !loadError && filteredClubs.length > 0 ? (
-						<ol className="club-index">
-							{filteredClubs.map((club, index) => {
+						<ul className="club-index">
+							{filteredClubs.map((club) => {
 								const instagramHandle = club.instagram_handle.replace(/^@/, "");
 								const profileUrl = club.website_url
 									?? `https://www.instagram.com/${encodeURIComponent(instagramHandle)}/`;
@@ -83,10 +83,7 @@ export default function ClubsPage() {
 
 								return (
 									<li className="club-index-item" key={club.id}>
-										<span className="club-index-number" aria-hidden="true">
-											{String(index + 1).padStart(2, "0")}
-										</span>
-										<div className="club-index-details">
+									<div className="club-index-details">
 											<h3>{club.name}</h3>
 											<span>@{instagramHandle}</span>
 										</div>
@@ -97,7 +94,7 @@ export default function ClubsPage() {
 									</li>
 								);
 							})}
-						</ol>
+						</ul>
 					) : !loading && !loadError && (
 						<div className="empty-state">{clubs.length ? "No clubs match that search." : "No clubs are listed yet."}</div>
 					)}

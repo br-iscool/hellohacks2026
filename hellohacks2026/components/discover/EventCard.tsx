@@ -35,9 +35,9 @@ export function EventCard({ event, compact = false, onClick }: EventCardProps) {
 						{(event.tags.length > 0 ? event.tags : [event.category]).map((tag) => <CategoryTag key={tag} name={tag} />)}
 						{event.price === "Free" && !event.tags.some((tag) => tag.toLowerCase() === "free") && <CategoryTag name="Free" />}
 					</div>
-					<time>{event.date.toUpperCase()}</time>
 				</div>
 				<h3>{event.title}</h3>
+				<time className="event-card-date">{event.date.toUpperCase()}</time>
 				<span className="club-link">
 					{event.club}
 				</span>
