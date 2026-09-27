@@ -170,8 +170,6 @@ export default function CalendarPage() {
 	}), [category, events, search]);
 	const selectedEvents = visibleEvents.filter((event) => event.date === selectedDate);
 	const hasEventsOnSelectedDate = events.some((event) => event.date === selectedDate);
-	const showEmptyState = selectedEvents.length === 0;
-	const activeEvent = selectedEvents.find((event) => event.id === selectedEventId) ?? selectedEvents[0];
 	const modalEvent = events.find((event) => event.id === dialogEventId);
 	const weekStart = startOfWeek(selected);
 	const monthStart = new Date(selected.getFullYear(), selected.getMonth(), 1, 12);
@@ -261,6 +259,8 @@ export default function CalendarPage() {
 							{calendarDates.map((date, index) => {
 								const dateKey = toDateKey(date);
 								const dayEvents = visibleEvents.filter((event) => event.date === dateKey);
+								const displayedEvents = dayEvents.slice(0, 2);
+								const remainingEventCount = dayEvents.length - displayedEvents.length;
 								const inCurrentMonth = date.getMonth() === selected.getMonth();
 								return (
 									<div key={dateKey} className={`calendar-date-cell ${view === "Week" ? "calendar-date-week" : ""} ${dateKey === selectedDate ? "calendar-date-selected" : ""} ${dateKey === today ? "calendar-date-today" : ""} ${view === "Month" && !inCurrentMonth ? "calendar-date-outside" : ""}`}>
@@ -268,47 +268,56 @@ export default function CalendarPage() {
 											<span className="calendar-date-short">{view === "Week" ? weekdays[index] : weekdays[date.getDay()]}</span>
 											<strong>{date.getDate()}</strong>
 										</button>
-										<div className="calendar-date-events">
-											{dayEvents.map((event) => (
-												<button key={event.id} className={`calendar-event-block event-${event.color}`} onClick={() => selectEvent(event)}>
-													<strong>{formatTime(event.startHour, event.startMinute)}</strong>
-													<span>{event.title}</span>
-												</button>
-											))}
-											{dateKey === selectedDate && showEmptyState && (
-												<div className="calendar-empty-overlay" role="status">
-													<strong>{hasEventsOnSelectedDate ? "No matching events" : "No events scheduled"}</strong>
-												</div>
-											)}
-										</div>
+											<div className="calendar-date-events" aria-label={`${dayEvents.length} events`}>
+												{displayedEvents.map((event) => (
+													<button key={event.id} className={`calendar-event-block event-${event.color}`} onClick={() => selectEvent(event)} title={`${formatTime(event.startHour, event.startMinute)} - ${event.title}`}>
+														<strong>{formatTime(event.startHour, event.startMinute)}</strong>
+														<span>{event.title}</span>
+													</button>
+												))}
+												{remainingEventCount > 0 && (
+													<button className="calendar-more-events" onClick={() => selectDate(date)}>
+														+{remainingEventCount} More
+													</button>
+												)}
+											</div>
 									</div>
 								);
 							})}
 						</div>
 					</section>
 
-					<aside className="calendar-event-detail">
-						{activeEvent ? (
-							<>
-								<div className="detail-image-wrap" style={activeEvent.imageUrl ? { backgroundImage: `url(${JSON.stringify(activeEvent.imageUrl)})` } : undefined}>
-									{!activeEvent.imageUrl && <Image src={`/event-photos/event-${activeEvent.image}.jpg`} alt={`Students at ${activeEvent.title}`} width={700} height={360}/>}
-								</div>
-								<div className="detail-content">
-									<div className="tag-list"><span className={`category-tag category-${activeEvent.category.toLowerCase()}`}>{activeEvent.category}</span>{activeEvent.price === "Free" && <span className="category-tag category-free">Free</span>}</div>
-									<p className="micro-eyebrow coral-text detail-date">{formatDate(activeEvent.date)}</p>
-									<h2>{activeEvent.title}</h2>
-									<p className="club-link">{activeEvent.club}</p>
-									<p className="detail-description">{activeEvent.description}</p>
-									<ul className="detail-facts"><li>{formatTime(activeEvent.startHour, activeEvent.startMinute)}</li><li>{activeEvent.place}</li><li>{activeEvent.price}</li></ul>
-									<button className="button button-primary" onClick={() => setDialogEventId(activeEvent.id)}>View details</button>
-							<small className="updated-note">Confirm event details with the organizer.</small>
-								</div>
-							</>
+					<aside className="calendar-event-detail calendar-day-event-list" aria-label={`Events for ${formatDate(selectedDate)}`}>
+						<header className="day-event-list-header">
+							<p className="micro-eyebrow coral-text">SELECTED DAY</p>
+							<h2>{formatDate(selectedDate)}</h2>
+							<span>{selectedEvents.length} {selectedEvents.length === 1 ? "event" : "events"}</span>
+						</header>
+						{selectedEvents.length > 0 ? (
+							<div className="day-event-list-scroll">
+								{selectedEvents.map((event) => (
+										<article
+											className={`day-event-item ${selectedEventId === event.id ? "day-event-item-selected" : ""}`}
+											key={event.id}
+											style={{ backgroundImage: `linear-gradient(180deg, rgb(8 29 44 / 30%), rgb(8 29 44 / 88%)), url(${JSON.stringify(event.imageUrl ?? `/event-photos/event-${event.image}.jpg`)})` }}
+										>
+										<div className="day-event-item-meta">
+											<span className={`day-event-dot event-${event.color}`} aria-hidden="true" />
+											<time>{formatTime(event.startHour, event.startMinute)}</time>
+											<span>{event.price}</span>
+										</div>
+										<h3>{event.title}</h3>
+										<p className="club-link">{event.club}</p>
+										<p className="day-event-place">{event.place}</p>
+										<button className="text-link" onClick={() => { selectEvent(event); setDialogEventId(event.id); }}>View details</button>
+									</article>
+								))}
+							</div>
 						) : (
 							<div className="calendar-no-selection">
-								<span className="calendar-no-selection-icon">—</span>
+								<span className="calendar-no-selection-icon">&mdash;</span>
 								<h2>{hasEventsOnSelectedDate ? "No matching events" : "No events this day"}</h2>
-								<p>Choose another date in the calendar to see what’s happening.</p>
+								<p>{hasEventsOnSelectedDate ? "Try changing your search or category filter." : "Choose another date to see its events."}</p>
 							</div>
 						)}
 					</aside>
