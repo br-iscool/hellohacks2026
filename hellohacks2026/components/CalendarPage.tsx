@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { eventCategory, eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "@/lib/api";
+import { averageTagColor } from "@/lib/tagColors";
+import { CategoryTag } from "./discover/CategoryTag";
 import { SiteFooter, SiteHeader } from "./SiteChrome";
 
 type CalendarEvent = {
@@ -13,6 +15,7 @@ type CalendarEvent = {
 	title: string;
 	club: string;
 	category: string;
+	tags: string[];
 	color: string;
 	place: string;
 	price: string;
@@ -51,6 +54,47 @@ function startOfWeek(date: Date) {
 	return start;
 }
 
+function SidebarTagScroller({ tags }: { tags: string[] }) {
+	const viewportRef = useRef<HTMLDivElement>(null);
+	const firstGroupRef = useRef<HTMLDivElement>(null);
+	const [isOverflowing, setIsOverflowing] = useState(false);
+
+	useEffect(() => {
+		const viewport = viewportRef.current;
+		const firstGroup = firstGroupRef.current;
+		if (!viewport || !firstGroup) return;
+
+		const measure = () => {
+			const expandedForScroll = viewport.classList.contains("is-overflowing");
+			const availableWidth = viewport.clientWidth - (expandedForScroll ? 24 : 0);
+			setIsOverflowing(firstGroup.scrollWidth > availableWidth);
+		};
+		const frame = requestAnimationFrame(measure);
+		const observer = new ResizeObserver(measure);
+		observer.observe(viewport);
+		observer.observe(firstGroup);
+		return () => {
+			cancelAnimationFrame(frame);
+			observer.disconnect();
+		};
+	}, [tags]);
+
+	return (
+		<div ref={viewportRef} className={`day-event-tags day-event-tags-scroll ${isOverflowing ? "is-overflowing" : ""}`}>
+			<div className="day-event-tags-track">
+				<div ref={firstGroupRef} className="day-event-tags-group">
+					{tags.map((tag) => <CategoryTag key={tag} name={tag} />)}
+				</div>
+				{isOverflowing && (
+					<div className="day-event-tags-group" aria-hidden="true">
+						{tags.map((tag) => <CategoryTag key={tag} name={tag} />)}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
 function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
 	const [details, setDetails] = useState<EventDetails | null>(null);
 	const [detailsError, setDetailsError] = useState<string | null>(null);
@@ -77,7 +121,11 @@ function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; onClose:
 					{!event.imageUrl && <Image src={`/event-photos/event-${event.image}.jpg`} alt={`Students at ${event.title}`} width={900} height={400}/>}
 				</div>
 				<div className="modal-content">
-					<span className={`category-tag category-${event.category.toLowerCase()}`}>{event.category}</span>
+					{event.tags.length > 0 && (
+						<div className="day-event-tags" aria-label="Event tags">
+							{event.tags.map((tag) => <CategoryTag key={tag} name={tag} />)}
+						</div>
+					)}
 					<p className="micro-eyebrow coral-text">{formatDate(event.date)}</p>
 					<h2 id="event-modal-title">{event.title}</h2>
 					<p className="club-link">{event.club}</p>
@@ -105,6 +153,7 @@ export default function CalendarPage() {
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [view, setView] = useState<"Week" | "Month">("Week");
+	const [sidebarOpen, setSidebarOpen] = useState(true);
 	const [selectedDate, setSelectedDate] = useState(today);
 	const [category, setCategory] = useState("All categories");
 	const [search, setSearch] = useState("");
@@ -126,6 +175,7 @@ export default function CalendarPage() {
 					if (!event.starts_at) return [];
 					const date = new Date(event.starts_at);
 					const category = eventCategory(event);
+					const tags = [...new Set(event.tags.map((tag) => tag.trim()).filter(Boolean))];
 					return [{
 						id: event.id,
 						date: toDateKey(date),
@@ -134,7 +184,8 @@ export default function CalendarPage() {
 						title: event.name,
 						club: event.club?.name ?? event.organization ?? "UBC Club",
 						category,
-						color: ({ science: "blue", arts: "lavender", career: "gold", social: "pink", sports: "mint" } as Record<string, string>)[category.toLowerCase()] ?? "blue",
+						tags,
+						color: averageTagColor(tags),
 						place: event.location ?? "Location TBA",
 						price: eventPrice(event),
 						description: event.description,
@@ -207,12 +258,14 @@ export default function CalendarPage() {
 	}
 
 	function selectDate(date: Date) {
+		setSidebarOpen(true);
 		setSelectedDate(toDateKey(date));
 		setSelectedEventId(null);
 		setDialogEventId(null);
 	}
 
 	function selectEvent(event: CalendarEvent) {
+		setSidebarOpen(true);
 		setSelectedDate(event.date);
 		setSelectedEventId(event.id);
 	}
@@ -247,47 +300,81 @@ export default function CalendarPage() {
 							</select>
 						</label>
 						<button className="filter-button" onClick={() => { setCategory("All categories"); setSearch(""); }}>Clear filters</button>
+						<button
+							className="filter-button"
+							aria-expanded={sidebarOpen}
+							aria-controls="calendar-day-sidebar"
+							onClick={() => setSidebarOpen((open) => !open)}
+						>
+							{sidebarOpen ? "Hide day panel" : "Show day panel"}
+						</button>
 					</div>
 				</div>
 
 				{loading && <p role="status">Loading events…</p>}
 				{loadError && <p role="alert" className="empty-state">{loadError}</p>}
-				<div className={`calendar-workspace calendar-${view.toLowerCase()}`}>
+				<div className={`calendar-workspace calendar-${view.toLowerCase()} ${sidebarOpen ? "" : "calendar-sidebar-collapsed"}`}>
 					<section className={`calendar-grid calendar-grid-${view.toLowerCase()}`} aria-label={`${view} calendar`}>
 						<div className="calendar-weekday-row"><span className="calendar-time-gutter"/>{weekdays.map((day) => <span key={day}>{day}</span>)}</div>
 						<div className={`calendar-dates ${view === "Month" ? "calendar-dates-month" : ""}`}>
 							{calendarDates.map((date, index) => {
 								const dateKey = toDateKey(date);
 								const dayEvents = visibleEvents.filter((event) => event.date === dateKey);
-								const displayedEvents = dayEvents.slice(0, 2);
+								const displayedEvents = dayEvents.slice(0, view === "Week" ? 8 : 2);
 								const remainingEventCount = dayEvents.length - displayedEvents.length;
 								const inCurrentMonth = date.getMonth() === selected.getMonth();
 								return (
 									<div key={dateKey} className={`calendar-date-cell ${view === "Week" ? "calendar-date-week" : ""} ${dateKey === selectedDate ? "calendar-date-selected" : ""} ${dateKey === today ? "calendar-date-today" : ""} ${view === "Month" && !inCurrentMonth ? "calendar-date-outside" : ""}`}>
-										<button className="calendar-date-heading" onClick={() => selectDate(date)} aria-pressed={dateKey === selectedDate}>
-											<span className="calendar-date-short">{view === "Week" ? weekdays[index] : weekdays[date.getDay()]}</span>
-											<strong>{date.getDate()}</strong>
-										</button>
-											<div className="calendar-date-events" aria-label={`${dayEvents.length} events`}>
-												{displayedEvents.map((event) => (
-													<button key={event.id} className={`calendar-event-block event-${event.color}`} onClick={() => selectEvent(event)} title={`${formatTime(event.startHour, event.startMinute)} - ${event.title}`}>
-														<strong>{formatTime(event.startHour, event.startMinute)}</strong>
-														<span>{event.title}</span>
-													</button>
-												))}
-												{remainingEventCount > 0 && (
-													<button className="calendar-more-events" onClick={() => selectDate(date)}>
-														+{remainingEventCount} More
-													</button>
-												)}
-											</div>
+										{view === "Month" ? (
+											<button
+												type="button"
+												className="calendar-month-day-button"
+												aria-label={`Select ${formatDate(dateKey)}, ${dayEvents.length} ${dayEvents.length === 1 ? "event" : "events"}`}
+												aria-pressed={dateKey === selectedDate}
+												onClick={() => selectDate(date)}
+											>
+												<div className="calendar-date-heading">
+													<span className="calendar-date-short">{weekdays[date.getDay()]}</span>
+													<strong>{date.getDate()}</strong>
+												</div>
+												<div className="calendar-date-events">
+													{displayedEvents.map((event) => (
+														<span key={event.id} className="calendar-event-block" style={{ backgroundColor: event.color }} title={`${formatTime(event.startHour, event.startMinute)} - ${event.title}`}>
+															<strong>{formatTime(event.startHour, event.startMinute)}</strong>
+															<span>{event.title}</span>
+														</span>
+													))}
+													{remainingEventCount > 0 && <span className="calendar-more-events">+{remainingEventCount} More</span>}
+												</div>
+											</button>
+										) : (
+											<>
+												<button className="calendar-date-heading" onClick={() => selectDate(date)} aria-pressed={dateKey === selectedDate}>
+													<span className="calendar-date-short">{weekdays[index]}</span>
+													<strong>{date.getDate()}</strong>
+												</button>
+												<div className="calendar-date-events" aria-label={`${dayEvents.length} events`}>
+													{displayedEvents.map((event) => (
+														<button key={event.id} className="calendar-event-block" style={{ backgroundColor: event.color }} onClick={() => selectEvent(event)} title={`${formatTime(event.startHour, event.startMinute)} - ${event.title}`}>
+															<strong>{formatTime(event.startHour, event.startMinute)}</strong>
+															<span>{event.title}</span>
+														</button>
+													))}
+													{remainingEventCount > 0 && (
+														<button className="calendar-more-events" onClick={() => selectDate(date)}>
+															+{remainingEventCount} More
+														</button>
+													)}
+												</div>
+											</>
+										)}
 									</div>
 								);
 							})}
 						</div>
 					</section>
 
-					<aside className="calendar-event-detail calendar-day-event-list" aria-label={`Events for ${formatDate(selectedDate)}`}>
+					<aside id="calendar-day-sidebar" className="calendar-event-detail calendar-day-event-list" aria-label={`Events for ${formatDate(selectedDate)}`}>
 						<header className="day-event-list-header">
 							<p className="micro-eyebrow coral-text">SELECTED DAY</p>
 							<h2>{formatDate(selectedDate)}</h2>
@@ -296,21 +383,26 @@ export default function CalendarPage() {
 						{selectedEvents.length > 0 ? (
 							<div className="day-event-list-scroll">
 								{selectedEvents.map((event) => (
+									<div className="day-event-entry" key={event.id}>
 										<article
 											className={`day-event-item ${selectedEventId === event.id ? "day-event-item-selected" : ""}`}
-											key={event.id}
-											style={{ backgroundImage: `linear-gradient(180deg, rgb(8 29 44 / 30%), rgb(8 29 44 / 88%)), url(${JSON.stringify(event.imageUrl ?? `/event-photos/event-${event.image}.jpg`)})` }}
+											style={{
+												backgroundImage: `linear-gradient(180deg, rgb(8 29 44 / 30%), rgb(8 29 44 / 88%)), url(${JSON.stringify(event.imageUrl ?? `/event-photos/event-${event.image}.jpg`)})`,
+												borderLeft: `4px solid ${event.color}`,
+											}}
 										>
-										<div className="day-event-item-meta">
-											<span className={`day-event-dot event-${event.color}`} aria-hidden="true" />
-											<time>{formatTime(event.startHour, event.startMinute)}</time>
-											<span>{event.price}</span>
-										</div>
-										<h3>{event.title}</h3>
-										<p className="club-link">{event.club}</p>
-										<p className="day-event-place">{event.place}</p>
-										<button className="text-link" onClick={() => { selectEvent(event); setDialogEventId(event.id); }}>View details</button>
-									</article>
+											<div className="day-event-item-meta">
+												<span className="day-event-dot" style={{ backgroundColor: event.color }} aria-hidden="true" />
+												<time>{formatTime(event.startHour, event.startMinute)}</time>
+												<span>{event.price}</span>
+											</div>
+											{event.tags.length > 0 && <SidebarTagScroller tags={event.tags} />}
+											<h3>{event.title}</h3>
+											<p className="club-link">{event.club}</p>
+											<p className="day-event-place">{event.place}</p>
+											<button className="text-link" onClick={() => { selectEvent(event); setDialogEventId(event.id); }}>View details</button>
+										</article>
+									</div>
 								))}
 							</div>
 						) : (
