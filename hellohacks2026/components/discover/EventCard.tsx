@@ -1,19 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { MouseEvent } from "react";
 import type { EventInfo } from "@/lib/data/events";
 import { CategoryTag } from "./CategoryTag";
 
 type EventCardProps = {
 	event: EventInfo;
 	compact?: boolean;
+	onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
-export function EventCard({ event, compact = false }: EventCardProps) {
+export function EventCard({ event, compact = false, onClick }: EventCardProps) {
 	const eventDate = new Date(event.date).toISOString().slice(0, 10);
 	const calendarHref = `/calendar?date=${eventDate}&event=${encodeURIComponent(event.title)}`;
 
 	return (
-		<Link className={`event-card ${compact ? "event-card-compact" : ""}`} href={calendarHref} aria-label={`View ${event.title} on the calendar`}>
+		<Link className={`event-card ${compact ? "event-card-compact" : ""}`} href={calendarHref} aria-label={`View ${event.title} on the calendar`} onClick={onClick}>
 			<div
 				className="event-image-wrap"
 				role="img"

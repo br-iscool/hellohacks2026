@@ -1,4 +1,8 @@
 export type EventInfo = {
+	id?: string;
+	calendarDate?: string;
+	startHour?: number;
+	startMinute?: number;
 	title: string;
 	club: string;
 	category: string;

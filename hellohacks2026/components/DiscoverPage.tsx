@@ -8,22 +8,29 @@ import { CategoryTag } from "./discover/CategoryTag";
 import { EventCard } from "./discover/EventCard";
 import { SearchBox } from "./discover/SearchBox";
 import { SiteHeader } from "./SiteChrome";
+import { EventDetailsDialog, type CalendarEvent } from "./CalendarPage";
 
 export default function DiscoverPage() {
 	const [events, setEvents] = useState<EventInfo[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
-	const [category, setCategory] = useState("All");
 	const [selectedTag, setSelectedTag] = useState<string | null>(null);
 	const [showAllTags, setShowAllTags] = useState(false);
+	const [dialogEvent, setDialogEvent] = useState<CalendarEvent | null>(null);
 	useEffect(() => {
 		const now = new Date();
-		const end = new Date(now);
+		const start = new Date(now);
+		start.setHours(0, 0, 0, 0);
+		const end = new Date(start);
 		end.setFullYear(end.getFullYear() + 1);
-		fetchEvents(now, end).then((rows) => setEvents(rows.map((event, index) => {
+		fetchEvents(start, end).then((rows) => setEvents(rows.map((event, index) => {
 			const start = event.starts_at ? new Date(event.starts_at) : null;
-			return {
+							return {
+								id: event.id,
+								calendarDate: start ? start.toISOString().slice(0, 10) : undefined,
+								startHour: start?.getHours() ?? 0,
+								startMinute: start?.getMinutes() ?? 0,
 				title: event.name,
 				club: event.club?.name ?? event.organization ?? "UBC Club",
 				category: eventCategory(event),
@@ -66,25 +73,36 @@ export default function DiscoverPage() {
 		() => events.filter((event) => {
 			const searchableText = `${event.title} ${event.club} ${event.place}`.toLowerCase();
 			const matchesSearch = searchableText.includes(search.toLowerCase());
-			const matchesCategory = category === "All"
-				|| event.category === category
-				|| (category === "Free" && event.price === "Free");
 			const matchesTag = selectedTag === null || event.tags.some((tag) => tag.toLocaleLowerCase() === selectedTag);
 
-			return matchesSearch && matchesCategory && matchesTag;
+			return matchesSearch && matchesTag;
 		}),
-		[events, search, category, selectedTag],
+		[events, search, selectedTag],
 	);
 	const featuredEvents = filteredEvents.slice(0, 2);
 	const upcomingEvents = filteredEvents.slice(2);
 	const todayLabel = new Date().toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
 	const todayEvents = events.filter((event) => event.date === todayLabel);
-	const resetFilters = () => {
-		setCategory("All");
-		setSelectedTag(null);
-		setSearch("");
-	};
 	const scrollToEvents = () => document.getElementById("events")?.scrollIntoView({ behavior: "smooth" });
+	const openEvent = (event: EventInfo) => {
+		if (!event.calendarDate) return;
+		setDialogEvent({
+			id: event.id ?? event.title,
+			date: event.calendarDate,
+			startHour: event.startHour ?? 0,
+			startMinute: event.startMinute ?? 0,
+			title: event.title,
+			club: event.club,
+			tags: event.tags,
+			color: "#0055b8",
+			place: event.place,
+			price: event.price,
+			description: event.description,
+			details: event.description,
+			image: event.image,
+			imageUrl: event.imageUrl ?? null,
+		});
+	};
 
 	return (
 		<>
@@ -105,6 +123,27 @@ export default function DiscoverPage() {
 									Find events
 								</button>
 							</div>
+							<div className="explore-tag-section">
+								<div className="explore-row">
+									<span>Explore:</span>
+									{topTags.map(renderTagButton)}
+									{remainingTags.length > 0 && (
+										<button
+											className="explore-more-button"
+											aria-expanded={showAllTags}
+											aria-controls="more-explore-tags"
+											onClick={() => setShowAllTags(!showAllTags)}
+										>
+											{showAllTags ? "Show less" : `More tags (${remainingTags.length})`}
+										</button>
+									)}
+								</div>
+								{showAllTags && remainingTags.length > 0 && (
+									<div className="explore-more-tags" id="more-explore-tags">
+										{remainingTags.map(renderTagButton)}
+									</div>
+								)}
+							</div>
 						</div>
 						<aside className="today-card" aria-label="Today on campus">
 							<div className="today-heading">
@@ -114,51 +153,26 @@ export default function DiscoverPage() {
 								</div>
 								<span className="event-count">{todayEvents.length} events</span>
 							</div>
+							<div className="today-events-scroll" aria-label="Events happening today">
+								{todayEvents.length > 0 ? todayEvents.map((event) => (
+									<button className="happening-card" key={event.id ?? event.title} onClick={() => openEvent(event)}>
+										<span className="live-label"><i aria-hidden="true" /> TODAY ON CAMPUS</span>
+										<strong>{event.title}</strong>
+										<span>{event.club} · {event.time}</span>
+									</button>
+								)) : (
 							<div className="happening-card">
 								<span className="live-label"><i aria-hidden="true" /> TODAY ON CAMPUS</span>
 								<strong>{todayEvents[0]?.title ?? "No events scheduled today"}</strong>
 								<span>{todayEvents[0] ? `${todayEvents[0].club} � ${todayEvents[0].time}` : "Check upcoming events below."}</span>
 							</div>
-							<p className="next-up">{todayEvents.length > 1 ? <>Also today: <b>{todayEvents[1].title}</b></> : "Published events from the UBC calendar."}</p>
+							)}
+							</div>
 						</aside>
 					</div>
 				</section>
 
 				<section className="discovery-section" id="events">
-					<div className="filter-bar">
-						<SearchBox value={search} onChange={setSearch} />
-						<div className="filter-actions">
-							<button className="filter-button" onClick={() => setCategory(category === "All" ? "Science" : "All")}>
-								{category === "All" ? "All categories" : category}
-							</button>
-							<button className="filter-button" onClick={() => setCategory(category === "Free" ? "All" : "Free")}>
-								{category === "Free" ? "Free events" : "Any price"}
-							</button>
-							<button className="filter-button" onClick={resetFilters}>Any time</button>
-						</div>
-					</div>
-					<div className="explore-tag-section">
-						<div className="explore-row">
-							<span>Explore:</span>
-							{topTags.map(renderTagButton)}
-							{remainingTags.length > 0 && (
-								<button
-									className="explore-more-button"
-									aria-expanded={showAllTags}
-									aria-controls="more-explore-tags"
-									onClick={() => setShowAllTags(!showAllTags)}
-								>
-									{showAllTags ? "Show less" : `More tags (${remainingTags.length})`}
-								</button>
-							)}
-						</div>
-						{showAllTags && remainingTags.length > 0 && (
-							<div className="explore-more-tags" id="more-explore-tags">
-								{remainingTags.map(renderTagButton)}
-							</div>
-						)}
-					</div>
-
 					<div className="section-title-row editor-title-row">
 						<div>
 							<p className="micro-eyebrow coral-text">EDITOR’S PICKS</p>
@@ -170,7 +184,7 @@ export default function DiscoverPage() {
 					{loadError && <div className="empty-state" role="alert">{loadError}</div>}
 					{!loading && !loadError && featuredEvents.length > 0 ? (
 						<div className="featured-grid">
-							{featuredEvents.map((event) => <EventCard key={event.title} event={event} />)}
+							{featuredEvents.map((event) => <EventCard key={event.title} event={event} onClick={(click) => { click.preventDefault(); openEvent(event); }} />)}
 						</div>
 					) : !loading && !loadError && (
 						<div className="empty-state">No events found. Try another search or category.</div>
@@ -185,7 +199,7 @@ export default function DiscoverPage() {
 					</div>
 					{!loading && !loadError && upcomingEvents.length > 0 ? (
 						<div className="upcoming-grid">
-							{upcomingEvents.map((event) => <EventCard compact key={event.title} event={event} />)}
+							{upcomingEvents.map((event) => <EventCard compact key={event.title} event={event} onClick={(click) => { click.preventDefault(); openEvent(event); }} />)}
 						</div>
 					) : !loading && !loadError && events.length > 0 && (
 						<div className="empty-state">No more events in this view yet.</div>
@@ -202,6 +216,7 @@ export default function DiscoverPage() {
 					</aside>
 				</section>
 			</main>
+			{dialogEvent && <EventDetailsDialog event={dialogEvent} onClose={() => setDialogEvent(null)} />}
 		</>
 	);
 }

@@ -7,7 +7,7 @@ import { averageTagColor } from "@/lib/tagColors";
 import { CategoryTag } from "./discover/CategoryTag";
 import { SiteHeader } from "./SiteChrome";
 
-type CalendarEvent = {
+export type CalendarEvent = {
 	id: string;
 	date: string;
 	startHour: number;
@@ -93,7 +93,7 @@ function SidebarTagScroller({ tags }: { tags: string[] }) {
 	);
 }
 
-function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
+export function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
 	const [details, setDetails] = useState<EventDetails | null>(null);
 	const [detailsError, setDetailsError] = useState<string | null>(null);
 	useEffect(() => {
