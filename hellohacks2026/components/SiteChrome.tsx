@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 	return (
 		<>
 			<SiteHeader active={active} />
-			<div className="route-content" key={pathname}>
+			<div className={`route-content ${pathname === "/calendar" ? "route-content-calendar" : ""}`} key={pathname}>
 				{children}
 			</div>
 		</>
