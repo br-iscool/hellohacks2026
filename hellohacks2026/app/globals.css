@@ -361,6 +361,7 @@ a {
 	font-weight: 700;
 }
 .happening-card {
+	animation: event-element-in 360ms ease-out both;
 	background: var(--navy);
 	color: white;
 	border-radius: 9px;
@@ -644,6 +645,7 @@ a {
 }
 .event-card {
 	display: block;
+	animation: event-element-in 360ms ease-out both;
 	color: inherit;
 	text-decoration: none;
 	background: white;
@@ -653,6 +655,28 @@ a {
 	box-shadow: 0 8px 20px #0928490b;
 	position: relative;
 	transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+.event-card-placeholder {
+	min-height: 390px;
+	background: #f7f9fb;
+}
+.event-card-placeholder.event-card-compact {
+	min-height: 300px;
+}
+.featured-grid .event-card:nth-child(2),
+.upcoming-grid .event-card:nth-child(2) { animation-delay: 60ms; }
+.upcoming-grid .event-card:nth-child(3) { animation-delay: 120ms; }
+.upcoming-grid .event-card:nth-child(4) { animation-delay: 180ms; }
+@keyframes event-element-in {
+	from { opacity: 0; transform: translateY(8px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+	.event-card,
+	.happening-card,
+	.calendar-event-block {
+		animation: none;
+	}
 }
 .event-card:hover,
 .event-card:focus-visible {
@@ -1046,6 +1070,7 @@ a {
 	border-bottom: 1px solid #edf0f2;
 }
 .calendar-event-block {
+	animation: event-element-in 300ms ease-out both;
 	position: absolute;
 	left: 4px;
 	right: 4px;
