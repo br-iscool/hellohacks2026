@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { SiteHeader } from "@/components/SiteChrome";
 
 type Club = {
 	id: string;
@@ -103,7 +103,6 @@ export default function ClubsPage() {
 					)}
 				</section>
 			</main>
-			<SiteFooter />
 		</>
 	);
 }

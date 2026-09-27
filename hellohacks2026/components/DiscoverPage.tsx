@@ -7,7 +7,7 @@ import { eventCategory, eventPrice, fetchEvents } from "@/lib/api";
 import { CategoryTag } from "./discover/CategoryTag";
 import { EventCard } from "./discover/EventCard";
 import { SearchBox } from "./discover/SearchBox";
-import { SiteFooter, SiteHeader } from "./SiteChrome";
+import { SiteHeader } from "./SiteChrome";
 
 export default function DiscoverPage() {
 	const [events, setEvents] = useState<EventInfo[]>([]);
@@ -202,7 +202,6 @@ export default function DiscoverPage() {
 					</aside>
 				</section>
 			</main>
-			<SiteFooter />
 		</>
 	);
 }

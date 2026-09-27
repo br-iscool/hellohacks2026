@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { eventCategory, eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "@/lib/api";
+import { eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "@/lib/api";
 import { averageTagColor } from "@/lib/tagColors";
 import { CategoryTag } from "./discover/CategoryTag";
-import { SiteFooter, SiteHeader } from "./SiteChrome";
+import { SiteHeader } from "./SiteChrome";
 
 type CalendarEvent = {
 	id: string;
@@ -14,7 +14,6 @@ type CalendarEvent = {
 	startMinute: number;
 	title: string;
 	club: string;
-	category: string;
 	tags: string[];
 	color: string;
 	place: string;
@@ -27,7 +26,6 @@ type CalendarEvent = {
 
 const today = toDateKey(new Date());
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const categories = ["All categories", "Science", "Arts", "Career", "Social", "Sports"];
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function toDateKey(date: Date) {
@@ -155,7 +153,6 @@ export default function CalendarPage() {
 	const [view, setView] = useState<"Week" | "Month">("Week");
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 	const [selectedDate, setSelectedDate] = useState(today);
-	const [category, setCategory] = useState("All categories");
 	const [search, setSearch] = useState("");
 	const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 	const [dialogEventId, setDialogEventId] = useState<string | null>(null);
@@ -174,7 +171,6 @@ export default function CalendarPage() {
 				const mapped = rows.flatMap((event, index) => {
 					if (!event.starts_at) return [];
 					const date = new Date(event.starts_at);
-					const category = eventCategory(event);
 					const tags = [...new Set(event.tags.map((tag) => tag.trim()).filter(Boolean))];
 					return [{
 						id: event.id,
@@ -183,7 +179,6 @@ export default function CalendarPage() {
 						startMinute: date.getMinutes(),
 						title: event.name,
 						club: event.club?.name ?? event.organization ?? "UBC Club",
-						category,
 						tags,
 						color: averageTagColor(tags),
 						place: event.location ?? "Location TBA",
@@ -215,10 +210,9 @@ export default function CalendarPage() {
 	}, []);
 	const selected = new Date(`${selectedDate}T12:00:00`);
 	const visibleEvents = useMemo(() => events.filter((event) => {
-		const matchesCategory = category === "All categories" || event.category === category;
 		const matchesSearch = `${event.title} ${event.club} ${event.place}`.toLowerCase().includes(search.toLowerCase());
-		return matchesCategory && matchesSearch;
-	}), [category, events, search]);
+		return matchesSearch;
+	}), [events, search]);
 	const selectedEvents = visibleEvents.filter((event) => event.date === selectedDate);
 	const hasEventsOnSelectedDate = events.some((event) => event.date === selectedDate);
 	const modalEvent = events.find((event) => event.id === dialogEventId);
@@ -294,19 +288,19 @@ export default function CalendarPage() {
 				<div className="calendar-filter-row">
 					<label className="search-box"><span className="search-icon" aria-hidden="true"/><input placeholder="Search events, clubs, or places" aria-label="Search calendar events" value={search} onChange={(event) => setSearch(event.target.value)}/></label>
 					<div className="filter-actions">
-						<label className="filter-button select-filter">
-							<select aria-label="Filter by category" value={category} onChange={(event) => setCategory(event.target.value)}>
-								{categories.map((item) => <option key={item}>{item}</option>)}
-							</select>
-						</label>
-						<button className="filter-button" onClick={() => { setCategory("All categories"); setSearch(""); }}>Clear filters</button>
 						<button
-							className="filter-button"
+							className="filter-button calendar-sidebar-toggle"
 							aria-expanded={sidebarOpen}
 							aria-controls="calendar-day-sidebar"
+							aria-label={sidebarOpen ? "Collapse day panel" : "Expand day panel"}
+							title={sidebarOpen ? "Collapse day panel" : "Expand day panel"}
 							onClick={() => setSidebarOpen((open) => !open)}
 						>
-							{sidebarOpen ? "Hide day panel" : "Show day panel"}
+							<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+								<rect x="3.5" y="4" width="17" height="16" rx="2" />
+								<path d="M15 4v16" />
+								<path d={sidebarOpen ? "M8 9l3 3-3 3" : "M10 9l-3 3 3 3"} />
+							</svg>
 						</button>
 					</div>
 				</div>
@@ -409,14 +403,13 @@ export default function CalendarPage() {
 							<div className="calendar-no-selection">
 								<span className="calendar-no-selection-icon">&mdash;</span>
 								<h2>{hasEventsOnSelectedDate ? "No matching events" : "No events this day"}</h2>
-								<p>{hasEventsOnSelectedDate ? "Try changing your search or category filter." : "Choose another date to see its events."}</p>
+								<p>{hasEventsOnSelectedDate ? "Try changing your search." : "Choose another date to see its events."}</p>
 							</div>
 						)}
 					</aside>
 				</div>
 				<p className="calendar-note">Check with each organizer for the latest event updates.</p>
 			</main>
-			<SiteFooter />
 			{modalEvent && <EventDetailsDialog event={modalEvent} onClose={() => setDialogEventId(null)} />}
 		</>
 	);

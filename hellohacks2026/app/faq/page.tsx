@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { SiteHeader } from "@/components/SiteChrome";
 
 const questions = [
 	{
@@ -58,7 +58,6 @@ export default function FAQPage() {
 				</div>
 				<p className="faq-disclaimer">Hackathon prototype · event and club information is sample content.</p>
 			</main>
-			<SiteFooter />
 		</>
 	);
 }

@@ -32,18 +32,3 @@ export function SiteHeader({ active }: SiteHeaderProps) {
 		</header>
 	);
 }
-
-export function SiteFooter() {
-	return (
-		<footer className="site-footer">
-			<Link className="brand footer-brand" href="/">
-				<span className="brand-mark">F</span>
-				<span className="brand-name">Findr</span>
-			</Link>
-			<p>Events are scraped from public club postings. Always confirm actual details with event organizers.</p>
-			<div>
-				<Link href="/faq">About</Link>
-			</div>
-		</footer>
-	);
-}
