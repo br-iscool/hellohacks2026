@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { SiteHeader } from "@/components/SiteChrome";
 
 type Club = {
 	id: string;
@@ -36,7 +35,6 @@ export default function ClubsPage() {
 
 	return (
 		<>
-			<SiteHeader active="Clubs" />
 			<main className="clubs-page">
 				<section className="clubs-intro">
 					<p className="micro-eyebrow coral-text">FIND YOUR PEOPLE</p>

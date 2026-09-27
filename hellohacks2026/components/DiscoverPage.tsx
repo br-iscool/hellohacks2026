@@ -7,7 +7,6 @@ import { eventCategory, eventClubName, eventPrice, fetchEvents } from "@/lib/api
 import { CategoryTag } from "./discover/CategoryTag";
 import { EventCard } from "./discover/EventCard";
 import { SearchBox } from "./discover/SearchBox";
-import { SiteHeader } from "./SiteChrome";
 import { EventDetailsDialog, type CalendarEvent } from "./CalendarPage";
 
 export default function DiscoverPage() {
@@ -114,7 +113,6 @@ export default function DiscoverPage() {
 
 	return (
 		<>
-			<SiteHeader active="Discover" />
 			<main>
 				<section className="hero-section">
 					<div className="hero-orb" aria-hidden="true" />

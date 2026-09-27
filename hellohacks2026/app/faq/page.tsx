@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { SiteHeader } from "@/components/SiteChrome";
 
 const questions = [
 	{
@@ -27,7 +26,6 @@ const questions = [
 export default function FAQPage() {
 	return (
 		<>
-			<SiteHeader active="FAQ" />
 			<main className="faq-page">
 				<div className="faq-heading">
 					<p className="micro-eyebrow coral-text">A QUICK INTRO</p>

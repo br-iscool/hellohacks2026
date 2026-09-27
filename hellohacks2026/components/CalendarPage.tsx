@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { eventClubName, eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "@/lib/api";
 import { averageTagColor } from "@/lib/tagColors";
 import { CategoryTag } from "./discover/CategoryTag";
-import { SiteHeader } from "./SiteChrome";
 
 export type CalendarEvent = {
 	id: string;
@@ -294,7 +293,6 @@ export default function CalendarPage() {
 
 	return (
 		<>
-			<SiteHeader active="Calendar" />
 			<main className="calendar-page">
 				<div className="calendar-heading-row">
 					<div>
