@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { eventClubName, eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "@/lib/api";
 import { averageTagColor } from "@/lib/tagColors";
 import { CategoryTag } from "./discover/CategoryTag";
@@ -105,9 +106,13 @@ function SidebarTagScroller({ tags }: { tags: string[] }) {
 }
 
 export function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
+	const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 	const [details, setDetails] = useState<EventDetails | null>(null);
 	const [detailsError, setDetailsError] = useState<string | null>(null);
 	const [isClosing, setIsClosing] = useState(false);
+	useEffect(() => {
+		setPortalTarget(document.body);
+	}, []);
 	const closeDialog = useCallback(() => {
 		if (isClosing) return;
 		setIsClosing(true);
@@ -129,8 +134,9 @@ export function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; o
 	}, [closeDialog]);
 	const missingDetails = "Check additional post details";
 	const time = eventTime(event);
+	if (!portalTarget) return null;
 
-	return (
+	return createPortal((
 		<div className={`modal-backdrop ${isClosing ? "modal-backdrop-closing" : ""}`} onClick={closeDialog}>
 			<section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-modal-title" onClick={(eventClick) => eventClick.stopPropagation()}>
 				<button className="modal-close" aria-label="Close event details" onClick={closeDialog}>×</button>
@@ -166,7 +172,7 @@ export function EventDetailsDialog({ event, onClose }: { event: CalendarEvent; o
 				</div>
 			</section>
 		</div>
-	);
+	), portalTarget);
 }
 
 export default function CalendarPage() {
@@ -179,6 +185,8 @@ export default function CalendarPage() {
 	const [search, setSearch] = useState("");
 	const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 	const [dialogEventId, setDialogEventId] = useState<string | null>(null);
+	const [calendarMotion, setCalendarMotion] = useState<"none" | "next" | "previous" | "view" | "today" | "selection">("none");
+	const [todayPulse, setTodayPulse] = useState(0);
 	useEffect(() => {
 		const now = new Date();
 		const start = new Date(now);
@@ -254,6 +262,9 @@ export default function CalendarPage() {
 		? startOfWeek(earliestDate)
 		: new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1, 12);
 	const canGoBack = periodStart > earliestPeriod;
+	const periodKey = view === "Week"
+		? toDateKey(weekStart)
+		: `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, "0")}`;
 	const weekEnd = new Date(weekStart);
 	weekEnd.setDate(weekEnd.getDate() + 6);
 	const weekLabel = `${monthNames[weekStart.getMonth()].slice(0, 3)} ${weekStart.getDate()} – ${monthNames[weekEnd.getMonth()].slice(0, 3)} ${weekEnd.getDate()}, ${weekEnd.getFullYear()}`;
@@ -272,23 +283,41 @@ export default function CalendarPage() {
 
 	function movePeriod(direction: number) {
 		const nextDate = new Date(selected);
+		setCalendarMotion(direction > 0 ? "next" : "previous");
 		if (view === "Week") nextDate.setDate(nextDate.getDate() + direction * 7);
 		else nextDate.setMonth(nextDate.getMonth() + direction, 1);
 		setSelectedDate(toDateKey(nextDate));
 		setDialogEventId(null);
 	}
 
-	function selectDate(date: Date) {
+	function selectDate(date: Date, motion?: "today" | "selection") {
 		setSidebarOpen(true);
+		if (motion) {
+			setCalendarMotion(motion);
+		} else {
+			const currentPeriod = view === "Week" ? startOfWeek(selected) : new Date(selected.getFullYear(), selected.getMonth(), 1, 12);
+			const targetPeriod = view === "Week" ? startOfWeek(date) : new Date(date.getFullYear(), date.getMonth(), 1, 12);
+			setCalendarMotion(targetPeriod.getTime() > currentPeriod.getTime() ? "next" : targetPeriod.getTime() < currentPeriod.getTime() ? "previous" : "selection");
+		}
 		setSelectedDate(toDateKey(date));
 		setSelectedEventId(null);
 		setDialogEventId(null);
 	}
 
 	function selectEvent(event: CalendarEvent) {
-		setSidebarOpen(true);
-		setSelectedDate(event.date);
+		selectDate(new Date(`${event.date}T12:00:00`), "selection");
 		setSelectedEventId(event.id);
+	}
+
+	function goToToday() {
+		setTodayPulse((pulse) => pulse + 1);
+		selectDate(todayDate, "today");
+	}
+
+	function changeView(nextView: "Week" | "Month") {
+		if (nextView === view) return;
+		setCalendarMotion("view");
+		setView(nextView);
 	}
 
 	return (
@@ -300,13 +329,13 @@ export default function CalendarPage() {
 						<h1>{view === "Week" ? "This week" : monthTitle}</h1>
 					</div>
 					<div className="calendar-controls">
-						<button className="filter-button" onClick={() => selectDate(todayDate)}>Today</button>
+						<button className="filter-button" onClick={goToToday}>Today</button>
 						<button className="calendar-arrow" disabled={!canGoBack} aria-label={`Previous ${view.toLowerCase()}`} onClick={() => movePeriod(-1)}>‹</button>
 						<strong>{view === "Week" ? weekLabel : monthTitle}</strong>
 						<button className="calendar-arrow" aria-label={`Next ${view.toLowerCase()}`} onClick={() => movePeriod(1)}>›</button>
 						<div className="view-switch" role="group" aria-label="Calendar view">
-							<button className={view === "Week" ? "view-selected" : ""} aria-pressed={view === "Week"} onClick={() => setView("Week")}>Week</button>
-							<button className={view === "Month" ? "view-selected" : ""} aria-pressed={view === "Month"} onClick={() => setView("Month")}>Month</button>
+							<button className={view === "Week" ? "view-selected" : ""} aria-pressed={view === "Week"} onClick={() => changeView("Week")}>Week</button>
+							<button className={view === "Month" ? "view-selected" : ""} aria-pressed={view === "Month"} onClick={() => changeView("Month")}>Month</button>
 						</div>
 					</div>
 				</div>
@@ -334,7 +363,11 @@ export default function CalendarPage() {
 				{loading && <p role="status">Loading events…</p>}
 				{loadError && <p role="alert" className="empty-state">{loadError}</p>}
 				<div className={`calendar-workspace calendar-${view.toLowerCase()} ${sidebarOpen ? "" : "calendar-sidebar-collapsed"}`}>
-					<section className={`calendar-grid calendar-grid-${view.toLowerCase()}`} aria-label={`${view} calendar`}>
+					<section
+						key={`${view}-${periodKey}-${calendarMotion === "today" ? todayPulse : ""}`}
+						className={`calendar-grid calendar-grid-${view.toLowerCase()} calendar-grid-motion-${calendarMotion}`}
+						aria-label={`${view} calendar`}
+					>
 						<div className="calendar-weekday-row"><span className="calendar-time-gutter"/>{weekdays.map((day) => <span key={day}>{day}</span>)}</div>
 						<div className={`calendar-dates ${view === "Month" ? "calendar-dates-month" : ""}`}>
 							{calendarDates.map((date, index) => {
@@ -344,7 +377,7 @@ export default function CalendarPage() {
 								const remainingEventCount = dayEvents.length - displayedEvents.length;
 								const inCurrentMonth = date.getMonth() === selected.getMonth();
 								return (
-									<div key={dateKey} className={`calendar-date-cell ${view === "Week" ? "calendar-date-week" : ""} ${dateKey === selectedDate ? "calendar-date-selected" : ""} ${dateKey === today ? "calendar-date-today" : ""} ${view === "Month" && !inCurrentMonth ? "calendar-date-outside" : ""}`}>
+										<div key={dateKey} className={`calendar-date-cell ${view === "Week" ? "calendar-date-week" : ""} ${dateKey === selectedDate ? "calendar-date-selected" : ""} ${dateKey === today ? "calendar-date-today" : ""} ${view === "Month" && !inCurrentMonth ? "calendar-date-outside" : ""}`}>
 										{view === "Month" ? (
 											<button
 												type="button"
@@ -395,7 +428,8 @@ export default function CalendarPage() {
 						</div>
 					</section>
 
-					<aside id="calendar-day-sidebar" className="calendar-event-detail calendar-day-event-list" aria-label={`Events for ${formatDate(selectedDate)}`}>
+				<aside id="calendar-day-sidebar" className="calendar-event-detail calendar-day-event-list" aria-label={`Events for ${formatDate(selectedDate)}`}>
+					<div className="calendar-sidebar-content" key={selectedDate}>
 						<header className="day-event-list-header">
 							<p className="micro-eyebrow coral-text">SELECTED DAY</p>
 							<h2>{formatDate(selectedDate)}</h2>
@@ -433,6 +467,7 @@ export default function CalendarPage() {
 								<p>{hasEventsOnSelectedDate ? "Try changing your search." : "Choose another date to see its events."}</p>
 							</div>
 						)}
+					</div>
 					</aside>
 				</div>
 				<p className="calendar-note">Check with each organizer for the latest event updates.</p>
