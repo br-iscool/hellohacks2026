@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { EventInfo } from "../../data/events";
+import type { EventInfo } from "@/lib/data/events";
 import { CategoryTag } from "./CategoryTag";
 
 type EventCardProps = {

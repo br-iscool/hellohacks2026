@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { eventCategory, eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "../api/appApi";
+import { eventCategory, eventPrice, fetchEventDetails, fetchEvents, type EventDetails } from "@/lib/api";
 import { SiteFooter, SiteHeader } from "./SiteChrome";
 
 type CalendarEvent = {

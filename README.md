@@ -7,6 +7,66 @@ hellohacks2026/  Next.js frontend
 backend/        Next.js API, Supabase schema, ingestion, and test data
 ```
 
+## Project structure
+
+Both applications use the Next.js App Router. Route folders under `app/` map to
+URLs, and `route.ts` files define HTTP endpoints. The frontend and backend are
+separate Next.js apps, so install dependencies and run scripts from the
+corresponding app directory.
+
+```text
+hellohacks2026/                  # Frontend Next.js app
+├── app/
+│   ├── api/                      # Frontend-facing API routes
+│   │   ├── clubs/route.ts
+│   │   └── events/
+│   │       ├── route.ts
+│   │       └── [id]/route.ts
+│   ├── calendar/page.tsx         # /calendar page
+│   ├── clubs/page.tsx            # /clubs page
+│   ├── faq/page.tsx              # /faq page
+│   ├── layout.tsx                # Root layout and shared document shell
+│   ├── page.tsx                  # / home page
+│   └── globals.css               # Global styles
+├── components/                   # Reusable UI components
+│   └── discover/                 # Components specific to event discovery
+├── lib/                          # Frontend helpers and data
+│   ├── api.ts                    # Browser helpers for frontend API routes
+│   └── data/events.ts            # Frontend event display data
+├── public/                       # Static assets served from /
+├── package.json
+└── tsconfig.json
+
+backend/                          # Backend Next.js app
+├── app/api/                      # HTTP endpoints
+│   ├── accounts/                 # Account management and scraping
+│   ├── events/                   # Event data and management
+│   ├── health/route.ts
+│   ├── posts/                    # Post processing
+│   └── v1/clubs/route.ts         # Public versioned endpoint
+├── data/                         # Import and seed data
+├── lib/                          # Server-side domain and infrastructure code
+│   ├── ai/                       # Gemini prompts, schemas, integration
+│   ├── db/repositories/          # Database access
+│   ├── events/                   # Event normalization and deduplication
+│   ├── instagram/                # Scrapers and profile normalization
+│   ├── pipeline/                 # Scrape and post-processing workflows
+│   ├── supabase/                 # Supabase clients
+│   └── utils/                    # Shared backend utilities
+├── scripts/                      # Import and seed commands
+├── supabase/
+│   ├── migrations/               # Database schema changes
+│   └── imports/                  # Prepared import files
+├── .env.example
+├── package.json
+└── tsconfig.json
+```
+
+Keep URL-specific code in `app/`, reusable frontend UI in `components/`, and
+frontend helpers in `lib/`. Keep backend business logic and data access in
+`backend/lib/`. Add static files to the frontend's `public/` directory and
+database changes as new Supabase migrations.
+
 ## What is implemented
 
 ```text

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { categories, type EventInfo } from "../data/events";
-import { eventCategory, eventPrice, fetchEvents } from "../api/appApi";
+import { categories, type EventInfo } from "@/lib/data/events";
+import { eventCategory, eventPrice, fetchEvents } from "@/lib/api";
 import { CategoryTag } from "./discover/CategoryTag";
 import { EventCard } from "./discover/EventCard";
 import { SearchBox } from "./discover/SearchBox";
