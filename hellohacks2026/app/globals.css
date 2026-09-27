@@ -467,7 +467,7 @@ a {
 	overflow: hidden;
 	opacity: 0;
 	transform: translateY(-6px);
-	transition: max-height 220ms ease, padding-bottom 220ms ease, opacity 180ms ease, transform 220ms ease;
+	transition: max-height 300ms ease, padding-bottom 300ms ease, opacity 180ms ease, transform 220ms ease;
 }
 .explore-more-tags-open {
 	max-height: 500px;
