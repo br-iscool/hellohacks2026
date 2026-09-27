@@ -115,7 +115,7 @@ export default function DiscoverPage() {
 					<div className="hero-inner">
 						<div className="hero-copy">
 							<p className="eyebrow"><span className="eyebrow-dot" /> UPCOMING UBC EVENTS</p>
-							<h1>What's cooking in UBC?</h1>
+							<h1>What&apos;s cooking in UBC?</h1>
 							<p className="hero-description">
 								A clearer way to find the talks, workshops, socials, games, and moments that you wouldn&apos;t find out about otherwise.
 							</p>
